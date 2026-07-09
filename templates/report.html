@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis['title'] }} — Report{% endblock %}
+{% block content %}
+
+<div class="report-header">
+  <div class="score-ring-wrap">
+    <div class="score-ring">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="42" stroke="var(--border)" stroke-width="8" fill="none"></circle>
+        <circle id="scoreCircle" cx="48" cy="48" r="42" stroke="var(--teal)" stroke-width="8" fill="none"
+                stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+      </svg>
+      <div class="score-ring-value">{{ report.health_score }}</div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:4px;">{{ analysis['title'] }}</h2>
+      <div class="history-meta">{{ analysis['created_at'][:16].replace('T',' ') }} UTC</div>
+      {% set label = report.overall_label %}
+      {% if 'Healthy' in label %}
+        <span class="pill pill-healthy" style="margin-top:8px;">{{ label }}</span>
+      {% elif 'Constructive' in label %}
+        <span class="pill pill-constructive" style="margin-top:8px;">{{ label }}</span>
+      {% elif 'Tense' in label %}
+        <span class="pill pill-tense" style="margin-top:8px;">{{ label }}</span>
+      {% else %}
+        <span class="pill pill-risk" style="margin-top:8px;">{{ label }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">← Back to Dashboard</a>
+    <form method="POST" action="{{ url_for('delete_report', analysis_id=analysis['id']) }}"
+          onsubmit="return confirm('Delete this analysis permanently?');">
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="report-grid">
+  <div class="chart-card">
+    <h3>Tone Distribution</h3>
+    <canvas id="toneChart" height="180"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Meeting Statistics</h3>
+    <div class="metric-mini-grid">
+      <div class="metric-mini"><div class="num">{{ report.sentence_count }}</div><div class="lbl">Sentences</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_words }}</div><div class="lbl">Words</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_fillers }}</div><div class="lbl">Filler Words</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_politeness }}</div><div class="lbl">Politeness Cues</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_aggression }}</div><div class="lbl">Aggression Cues</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_resolution }}</div><div class="lbl">Resolution Cues</div></div>
+      <div class="metric-mini"><div class="num">{{ report.total_questions }}</div><div class="lbl">Questions Asked</div></div>
+    </div>
+  </div>
+</div>
+
+{% if report.has_speakers %}
+<div class="chart-card" style="margin-bottom:24px;">
+  <h3>Per-Speaker Breakdown</h3>
+  <table class="speaker-table">
+    <thead>
+      <tr><th>Speaker</th><th>Sentences</th><th>Avg. Tone Score</th><th>Dominant Tone</th><th>Aggression Cues</th></tr>
+    </thead>
+    <tbody>
+      {% for sp, s in report.speaker_stats.items() %}
+      <tr>
+        <td><strong>{{ sp }}</strong></td>
+        <td>{{ s.sentence_count }}</td>
+        <td>{{ s.avg_score }}</td>
+        <td>{{ (s.tone_counts.items() | list | sort(attribute='1', reverse=True) | first)[0] }}</td>
+        <td>{{ s.aggression_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="transcript-wrap">
+  <h3 style="margin-bottom:16px; text-transform:uppercase; font-size:0.95rem; color:var(--text-dim); letter-spacing:0.04em;">Sentence-by-Sentence Breakdown</h3>
+  {% for s in report.sentences %}
+  <div class="sentence-row tone-{{ s.tone }}">
+    {% if report.has_speakers %}<div class="sentence-speaker">{{ s.speaker }}</div>{% endif %}
+    <div class="sentence-text">
+      {{ s.text }}
+      <span class="tone-tag tag-{{ s.tone }}">{{ s.tone }}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  const toneCounts = {{ report.tone_counts | tojson }};
+  const healthScore = {{ report.health_score }};
+
+  const toneColorMap = {
+    positive: '#4fd1c5', neutral: '#9b8cff', negative: '#ffb15c',
+    aggressive: '#ff6b6b', anxious: '#ffcf6e'
+  };
+  const labels = Object.keys(toneCounts);
+  const data = Object.values(toneCounts);
+  const colors = labels.map(l => toneColorMap[l] || '#888');
+
+  new Chart(document.getElementById('toneChart'), {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { color: '#a6acbd', font: { size: 11 } } } },
+      cutout: '65%'
+    }
+  });
+
+  // animate score ring
+  const circle = document.getElementById('scoreCircle');
+  const circumference = 264;
+  const offset = circumference - (healthScore / 100) * circumference;
+  let scoreColor = '#4fd1c5';
+  if (healthScore < 35) scoreColor = '#ff6b6b';
+  else if (healthScore < 55) scoreColor = '#ffcf6e';
+  else if (healthScore < 75) scoreColor = '#9b8cff';
+  circle.style.stroke = scoreColor;
+  setTimeout(() => { circle.style.transition = 'stroke-dashoffset 1s ease-out'; circle.style.strokeDashoffset = offset; }, 100);
+</script>
+{% endblock %}

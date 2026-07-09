@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Log In — ToneScope{% endblock %}
+{% block content %}
+<div class="card card-narrow">
+  <h2 class="section-title">Welcome back</h2>
+  <p class="section-sub">Log in to view your meeting analysis history.</p>
+  <form method="POST">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autofocus placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required placeholder="••••••••">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Log In</button>
+  </form>
+  <div class="divider-text">Don't have an account? <a href="{{ url_for('register') }}" class="link-accent">Sign up</a></div>
+</div>
+{% endblock %}

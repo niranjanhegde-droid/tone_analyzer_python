@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ToneScope{% endblock %}
+{% block content %}
+
+<div class="report-header">
+  <div>
+    <h2 class="section-title">Your Dashboard</h2>
+    <p class="section-sub">All your past meeting analyses, stored privately in SQLite.</p>
+  </div>
+  <a href="{{ url_for('analyze') }}" class="btn btn-primary">+ New Analysis</a>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-label">Meetings Analyzed</div>
+    <div class="stat-value">{{ total }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Average Health Score</div>
+    <div class="stat-value">{{ avg_health }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Flagged At-Risk</div>
+    <div class="stat-value">{{ at_risk }}</div>
+  </div>
+</div>
+
+{% if analyses %}
+<div class="history-list">
+  {% for a in analyses %}
+  <a href="{{ url_for('view_report', analysis_id=a['id']) }}" class="history-item">
+    <div class="history-main">
+      <h4>{{ a['title'] }}</h4>
+      <div class="history-meta">{{ a['created_at'][:16].replace('T', ' ') }} UTC</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <div style="text-align:right;">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:1.2rem;">{{ a['health_score'] }}</div>
+        <div class="history-meta">Health Score</div>
+      </div>
+      {% set label = a['overall_label'] %}
+      {% if 'Healthy' in label %}
+        <span class="pill pill-healthy">{{ label }}</span>
+      {% elif 'Constructive' in label %}
+        <span class="pill pill-constructive">{{ label }}</span>
+      {% elif 'Tense' in label %}
+        <span class="pill pill-tense">{{ label }}</span>
+      {% else %}
+        <span class="pill pill-risk">{{ label }}</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state card">
+  <h3>No analyses yet</h3>
+  <p>Run your first meeting tone analysis to see it appear here.</p>
+  <a href="{{ url_for('analyze') }}" class="btn btn-primary" style="margin-top:16px;">Analyze a Transcript</a>
+</div>
+{% endif %}
+
+{% endblock %}

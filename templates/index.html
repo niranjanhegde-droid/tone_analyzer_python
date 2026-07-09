@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}ToneScope — AI Meeting Tone Analyzer{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">Capstone Mini Project · AI &amp; ML</div>
+    <h1>Hear the <span class="accent">tone</span> hiding inside every meeting transcript.</h1>
+    <p class="lead">
+      ToneScope runs a hybrid AI engine &mdash; a trained Naive&nbsp;Bayes tone
+      classifier plus a rule-based sentiment lexicon &mdash; over your meeting
+      transcripts to surface collaboration, tension, and risk sentence by
+      sentence, speaker by speaker.
+    </p>
+    <div class="hero-cta">
+      {% if current_user %}
+        <a href="{{ url_for('analyze') }}" class="btn btn-primary">Analyze a Transcript</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">Go to Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started Free</a>
+        <a href="{{ url_for('login') }}" class="btn btn-ghost">I have an account</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="waveform-card">
+    <div class="waveform-bars" id="heroWaveform"></div>
+    <div class="waveform-caption">
+      <span>Sentence-by-sentence tone trace</span>
+      <span>Live demo</span>
+    </div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--positive)"></span>Positive</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--neutral)"></span>Neutral</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--negative)"></span>Negative</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--aggressive)"></span>Aggressive</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--anxious)"></span>Anxious</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">How the engine works</h2>
+  <p class="section-sub">Two independent models, combined, so one model's blind spot never dominates the verdict.</p>
+  <div class="grid-3">
+    <div class="feature-card">
+      <span class="feature-icon">🧠</span>
+      <h3>Trained NB Classifier</h3>
+      <p>A Multinomial Naive Bayes model, trained on 180+ labeled meeting utterances via TF-IDF, predicts positive / neutral / negative / aggressive / anxious tone.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📖</span>
+      <h3>Sentiment Lexicon</h3>
+      <p>A hand-built VADER-style lexicon scores valence with negation handling and intensifiers, catching nuance the classifier alone can miss.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3>Meeting Health Score</h3>
+      <p>Filler words, politeness markers, hedging, and aggression cues combine into a single 0&ndash;100 meeting health index per transcript.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🗣️</span>
+      <h3>Per-Speaker Breakdown</h3>
+      <p>Paste a "Speaker: text" transcript and get individual tone profiles &mdash; useful for spotting who is driving tension in a call.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <h3>Private by Default</h3>
+      <p>Accounts, transcripts, and reports are stored per-user in a local SQLite database &mdash; nothing leaves your deployment.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <h3>Instant Results</h3>
+      <p>The whole pipeline runs in-process with no external AI API calls needed &mdash; analysis returns in well under a second.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const demoTones = ['positive','neutral','negative','aggressive','neutral','positive','anxious','negative','positive','neutral','aggressive','positive'];
+  const colors = {
+    positive: 'var(--positive)', neutral: 'var(--neutral)', negative: 'var(--negative)',
+    aggressive: 'var(--aggressive)', anxious: 'var(--anxious)'
+  };
+  const wrap = document.getElementById('heroWaveform');
+  demoTones.forEach((t, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const h = 25 + Math.abs(Math.sin(i * 1.3)) * 75;
+    bar.style.height = h + '%';
+    bar.style.background = colors[t];
+    bar.style.animationDelay = (i * 0.05) + 's';
+    wrap.appendChild(bar);
+  });
+</script>
+{% endblock %}

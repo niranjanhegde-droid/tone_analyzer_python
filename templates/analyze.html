@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}New Analysis — ToneScope{% endblock %}
+{% block content %}
+
+<h2 class="section-title">New Meeting Analysis</h2>
+<p class="section-sub">Paste a transcript, or upload a .txt file. For per-speaker breakdown, format lines as <code>Speaker: text</code>.</p>
+
+<div class="card" style="max-width: 720px;">
+  <form method="POST" enctype="multipart/form-data" id="analyzeForm">
+    <div class="field">
+      <label for="title">Meeting title</label>
+      <input type="text" id="title" name="title" placeholder="e.g. Sprint 14 Planning Call">
+    </div>
+
+    <div class="upload-toggle">
+      <button type="button" class="active" id="pasteTab">Paste Text</button>
+      <button type="button" id="uploadTab">Upload .txt File</button>
+    </div>
+
+    <div class="field" id="pastePane">
+      <label for="transcript">Transcript</label>
+      <textarea id="transcript" name="transcript" placeholder="Alex: Good morning everyone...&#10;Priya: Thanks for joining...&#10;&#10;(or paste plain text without speaker labels)"></textarea>
+      <div class="field-hint">
+        <a href="#" id="loadSample" class="link-accent">Load a sample transcript</a> to try it instantly.
+      </div>
+    </div>
+
+    <div class="field" id="uploadPane" style="display:none;">
+      <label for="transcript_file">Transcript file (.txt)</label>
+      <input type="file" id="transcript_file" name="transcript_file" accept=".txt">
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Run AI Analysis</button>
+  </form>
+</div>
+
+<script>
+  const pasteTab = document.getElementById('pasteTab');
+  const uploadTab = document.getElementById('uploadTab');
+  const pastePane = document.getElementById('pastePane');
+  const uploadPane = document.getElementById('uploadPane');
+
+  pasteTab.addEventListener('click', () => {
+    pasteTab.classList.add('active'); uploadTab.classList.remove('active');
+    pastePane.style.display = 'block'; uploadPane.style.display = 'none';
+  });
+  uploadTab.addEventListener('click', () => {
+    uploadTab.classList.add('active'); pasteTab.classList.remove('active');
+    uploadPane.style.display = 'block'; pastePane.style.display = 'none';
+  });
+
+  document.getElementById('loadSample').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const res = await fetch("{{ url_for('api_sample') }}");
+    const data = await res.json();
+    document.getElementById('transcript').value = data.transcript;
+    if (!document.getElementById('title').value) {
+      document.getElementById('title').value = 'Sample: Payments Module Sync';
+    }
+  });
+</script>
+{% endblock %}
