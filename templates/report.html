@@ -56,6 +56,31 @@
 </div>
 
 {% if report.has_speakers %}
+<div class="report-grid">
+  <div class="chart-card">
+    <h3>Speaker Talk Share Volume</h3>
+    <div class="talk-share-list">
+      {% for sp, s in report.speaker_ranking %}
+      <div class="talk-share-row">
+        <div class="talk-share-top">
+          <span class="talk-share-name">{{ sp }}</span>
+          <span class="talk-share-pct">{{ s.talk_share_pct }}%</span>
+        </div>
+        <div class="talk-share-track">
+          <div class="talk-share-fill" style="width: {{ s.talk_share_pct }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="chart-card">
+    <h3>Chronological Polarity Flow</h3>
+    <canvas id="polarityChart" height="200"></canvas>
+  </div>
+</div>
+{% endif %}
+
+{% if report.has_speakers %}
 <div class="chart-card" style="margin-bottom:24px;">
   <h3>Per-Speaker Breakdown</h3>
   <table class="speaker-table">
@@ -92,29 +117,84 @@
 
 <script>
   const toneCounts = {{ report.tone_counts | tojson }};
-  const healthScore = {{ report.health_score }};
-
   const toneColorMap = {
     positive: '#4fd1c5', neutral: '#9b8cff', negative: '#ffb15c',
     aggressive: '#ff6b6b', anxious: '#ffcf6e'
   };
-  const labels = Object.keys(toneCounts);
-  const data = Object.values(toneCounts);
-  const colors = labels.map(l => toneColorMap[l] || '#888');
+  try {
+    const labels = Object.keys(toneCounts);
+    const data = Object.values(toneCounts);
+    const colors = labels.map(l => toneColorMap[l] || '#888');
+    new Chart(document.getElementById('toneChart'), {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }] },
+      options: {
+        plugins: { legend: { position: 'bottom', labels: { color: '#a6acbd', font: { size: 11 } } } },
+        cutout: '65%'
+      }
+    });
+  } catch (err) {
+    // Chart.js failed to load (e.g. no network access to the CDN) -- fail
+    // quietly so the rest of the report (score ring, tables) still renders.
+    console.warn('Tone chart unavailable:', err);
+    const el = document.getElementById('toneChart');
+    if (el) el.insertAdjacentHTML('afterend', '<p style="color:var(--text-faint);font-size:0.85rem;">Chart unavailable offline.</p>');
+  }
+</script>
 
-  new Chart(document.getElementById('toneChart'), {
-    type: 'doughnut',
-    data: {
-      labels: labels,
-      datasets: [{ data: data, backgroundColor: colors, borderWidth: 0 }]
-    },
-    options: {
-      plugins: { legend: { position: 'bottom', labels: { color: '#a6acbd', font: { size: 11 } } } },
-      cutout: '65%'
-    }
-  });
+{% if report.has_speakers %}
+<script>
+  const polarityFlow = {{ report.polarity_flow | tojson }};
+  try {
+    const labels = polarityFlow.map(p => p.index);
+    const scores = polarityFlow.map(p => p.score);
+    new Chart(document.getElementById('polarityChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Tone score',
+          data: scores,
+          borderColor: '#4fd1c5',
+          backgroundColor: 'rgba(79,209,197,0.12)',
+          pointBackgroundColor: polarityFlow.map(p => ({
+            positive: '#4fd1c5', neutral: '#9b8cff', negative: '#ffb15c',
+            aggressive: '#ff6b6b', anxious: '#ffcf6e'
+          }[p.tone] || '#9b8cff')),
+          pointRadius: 3,
+          tension: 0.35,
+          fill: true,
+        }]
+      },
+      options: {
+        scales: {
+          y: { min: -1, max: 1, ticks: { color: '#6c7488', stepSize: 0.5 }, grid: { color: '#313a4d' } },
+          x: { title: { display: true, text: 'Sentence sequence', color: '#6c7488' },
+               ticks: { color: '#6c7488', maxTicksLimit: 10 }, grid: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const p = polarityFlow[ctx.dataIndex];
+                return `${p.speaker}: ${p.tone} (${p.score})`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('Polarity chart unavailable:', err);
+    const el = document.getElementById('polarityChart');
+    if (el) el.insertAdjacentHTML('afterend', '<p style="color:var(--text-faint);font-size:0.85rem;">Chart unavailable offline.</p>');
+  }
+</script>
+{% endif %}
 
-  // animate score ring
+<script>
+  const healthScore = {{ report.health_score }};
   const circle = document.getElementById('scoreCircle');
   const circumference = 264;
   const offset = circumference - (healthScore / 100) * circumference;

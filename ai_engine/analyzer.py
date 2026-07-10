@@ -291,6 +291,38 @@ def analyze_transcript(transcript: str) -> dict:
             s["avg_score"] = round(s["score_sum"] / s["sentence_count"], 3)
             del s["score_sum"]
 
+        # ---------------------------------------------------------------
+        # Talk-share volume: each speaker's share of the meeting's total
+        # word count, expressed as a whole-number percentage that sums to
+        # ~100. This is what powers the "who talked more / less" bar list.
+        # ---------------------------------------------------------------
+        speaker_word_total = sum(s["word_count"] for s in speaker_stats.values()) or 1
+        for sp, s in speaker_stats.items():
+            s["talk_share_pct"] = round(100 * s["word_count"] / speaker_word_total, 1)
+
+    # sort speakers by talk share, most to least, for a ready-to-render list
+    speaker_ranking = sorted(
+        speaker_stats.items(),
+        key=lambda item: item[1].get("talk_share_pct", 0),
+        reverse=True,
+    ) if has_speakers else []
+
+    # -----------------------------------------------------------------
+    # Chronological polarity flow: the combined tone score of every
+    # sentence in speaking order, used to plot a tension/positivity
+    # line across the timeline of the meeting (mirrors the "polarity
+    # flow" chart pattern from LLM-based meeting analyzers).
+    # -----------------------------------------------------------------
+    polarity_flow = [
+        {
+            "index": i + 1,
+            "speaker": r["speaker"],
+            "score": r["combined_score"],
+            "tone": r["tone"],
+        }
+        for i, r in enumerate(sentence_reports)
+    ]
+
     return {
         "overall_score": round(avg_score, 3),
         "unweighted_score": round(unweighted_avg, 3),
@@ -307,5 +339,7 @@ def analyze_transcript(transcript: str) -> dict:
         "total_questions": total_questions,
         "has_speakers": has_speakers,
         "speaker_stats": speaker_stats,
+        "speaker_ranking": speaker_ranking,
+        "polarity_flow": polarity_flow,
         "sentences": sentence_reports,
     }

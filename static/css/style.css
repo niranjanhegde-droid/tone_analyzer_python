@@ -184,7 +184,7 @@ a { color: inherit; text-decoration: none; }
 .score-ring-wrap { display: flex; align-items: center; gap: 18px; }
 .score-ring { position: relative; width: 96px; height: 96px; }
 .score-ring svg { transform: rotate(-90deg); }
-.score-ring-value { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; }
+.score-ring-value { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; }
 
 .report-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; margin-bottom: 24px; }
 .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
@@ -210,6 +210,14 @@ a { color: inherit; text-decoration: none; }
 .speaker-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
 .speaker-table th, .speaker-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
 .speaker-table th { color: var(--text-faint); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+
+.talk-share-list { display: flex; flex-direction: column; gap: 16px; }
+.talk-share-row { display: flex; flex-direction: column; gap: 6px; }
+.talk-share-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.88rem; }
+.talk-share-name { font-weight: 600; color: var(--text); }
+.talk-share-pct { color: var(--teal); font-weight: 700; font-family: var(--font-display); }
+.talk-share-track { height: 8px; border-radius: 999px; background: var(--bg-elevated); border: 1px solid var(--border); overflow: hidden; }
+.talk-share-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--teal), var(--violet)); transition: width 1s ease-out; }
 
 .page-actions { display: flex; gap: 10px; margin-top: 24px; }
 
